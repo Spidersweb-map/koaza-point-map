@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="description" content="小字地名の位置情報を表示する地図サイトです">
+    <meta name="keyword" content="小字, 地名, 歴史, 地理, 地図">
+    <title>小字ポイントマップ</title>
+    <link rel="icon" href="src/images/favicon.ico">
+    <!--  MapLibre  -->
+    <script src="https://unpkg.com/maplibre-gl@5.15.0/dist/maplibre-gl.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.15.0/dist/maplibre-gl.css">
+    <!-- PMTiles -->
+    <script src="https://unpkg.com/pmtiles@3.0.5/dist/pmtiles.js"></script>
+    <!--  スクリプトファイル -->
+    <script type="module" src="src/mapscript.js?v=1" charset="UTF-8"></script>
+    <link rel="stylesheet" href="src/mapstyle_5.css"/>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-51Y0YFXMZ6"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-51Y0YFXMZ6');
+    </script>
+</head>
+<body>
+    <div id="loading-screen">
+        <div class="spinner"></div>
+        <div id="loading-text">地名データを読み込み中...</div>
+    </div>
+    <header>
+        <div class="site-title">小字ポイント<br class="br-sp">マップ</div>
+        <div class="search-container">
+            <button id="search-menu"><img src="src/images/search_settings.svg"></button>
+            <div id="search-menu-container" class="menu-container">
+                <label class="menu-label">
+                    <input type="radio" name="search-target" value="general" id="search-target-general" checked>
+                    <span>住所・施設名</span>
+                </label>
+                <label class="menu-label">
+                    <input type="radio" name="search-target" value="koaza" id="search-target-koaza">
+                    <span>小字名</span>
+                </label>
+                <div class="sub-options-container disabled" id="sub-options">
+                    <div class="setting-title">検索対象</div>
+                    <label class="menu-label">
+                        <input type="checkbox" id="koazaTouki" value="koazaTouki" checked>
+                        <span>登記小字</span>
+                    </label>
+                    <label class="menu-label">
+                        <input type="checkbox" id="koazaLabel" value="koazaLabel" checked>
+                        <span>小字ラベル</span>
+                    </label>
+                    <div class="setting-title">検索設定</div>
+                    <label class="menu-label">
+                        <input type="checkbox" id="inclOaza" value="inclOaza" checked>
+                        <span>大字名を含める</span>
+                    </label>
+                    <label class="menu-label">
+                        <input type="checkbox" id="allowVriants" value="allowVriants" checked>
+                        <span>外字・表記揺れを置換する</span>
+                    </label>
+                </div>
+            </div>
+            <form id="search-form" action="javascript:void(0);">
+                <input type="search" id="search-input" placeholder="住所・施設名を入力..." enterkeyhint="search">
+                <button type="button" id="clear-search" class="clear-btn">&times;</button>
+                <button type="submit" id="search-submit" class="submit-btn">検索</button>
+            </form>    
+            <div id="search-results"></div>
+        </div>
+        <div id="header-button-container">
+            <button id="info-btn" class="header-button"><img src="src/images/info.svg" alt="情報"></button>
+            <button id="settings" class="header-button"><img src="src/images/settings.svg"></button>
+        </div>
+    </header>
+    <div id="info-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-tabs">
+                    <button class="tab-btn active" data-tab="tab-terms">本サイトについて</button>
+                    <button class="tab-btn" data-tab="tab-legend">使い方</button>
+                    <button class="tab-btn" data-tab="tab-source">掲載情報</button>
+                </div>
+                <button class="modal-close" id="modal-close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="tab-terms" class="tab-content active">
+                    <h3>「小字ポイントマップ」について</h3>
+                    <p>「小字ポイントマップ」は、全国の小字のおおよその位置を表示・検索できるweb地図です。</p>
+                    <img class="modal-img" src="src/images/modal_top.jpg">
+                    <h3>利用上の注意</h3>
+                    <ul>
+                        <li>本サイトの掲載情報は誤りを含む可能性があります。権利関係の証明等には一切使えません。</li>
+                        <li>本サイトには一部機微な情報が含まれる可能性がありますが、特定の地域の歴史的背景を強調する意図はありません。調査研究等以外の目的で本サイトの情報を利用することはお控えください。</li>
+                        <li>本サイトは、本サイトの利用によるいかなる損害についても責任を負いません。</li>
+                        <li>本サイトの閲覧・利用により、これらの事項に同意したものとみなします。</li>
+                    </ul>
+                    <h3>その他</h3>
+                    <ul>
+                        <li>小字の境界がわかる地図については、<a href="https://spidersweb-map.github.io/koaza-map/src/showMap.html">小字マップ</a>も作成しています。また、小字の境界を詳しく知りたい方は有力な他サイトの利用をおすすめします。</li>
+                        <li>本サイトの掲載内容は、管理人(クモの巣/Spidersweb)の調査および参考資料によるものです。掲載情報は不定期で更新する可能性があります。ご連絡はspidersweb.map [at] gmail.comまで。</li>
+                    </ul>
+                </div>
+                <div id="tab-legend" class="tab-content">
+                    <h3>地図の閲覧</h3>
+                    <img class="modal-img" src="src/images/modal_map.jpg">
+                    <ul>
+                        <li>背景地図の上に、おおよその大字の領域と地名ラベルが表示されています。地名ラベルは大字領域と同色ですが、領域データの精度の都合上、ラベルと背景の色が違うことがあります。</li>
+                        <li>地名ラベルをクリックすると詳細がポップアップ表示されるとともに、同じ大字に属する小字の一覧がサイドパネルに表示されます。</li>
+                        <li>サイドパネルには電子化された不動産登記に存在する小字と、地図上にラベルが表示されている小字の一覧が表示されます。なお、両者は情報源が異なるため、一方にしか存在しなかったり、表記が違ったりする場合があります。</li>
+                        <li>大字領域や地名ラベルの透明度は、歯車マークのメニューから変更することができます。</li>
+                    </ul>
+                    <h3>検索</h3>
+                    <img class="modal-img" src="src/images/modal_search.jpg">
+                    <ul>
+                        <li>検索バーに検索語を入力することで、①一般地名検索、②小字名検索を行うことができます。両者は虫眼鏡マークのメニューから切り替えることができます。</li>
+                        <li>一般地名検索では、<a href="https://github.com/gsi-cyberjapan/gsimaps">地理院地図のAPI</a>を用いて住所やランドマーク名で検索できます。</li>
+                        <li>小字名検索では、入力文字列に対して部分一致する小字を検索します(複数キーワードには対応していません)。虫眼鏡マークのメニューから各種検索設定を変更できます。</li>
+                        <li>「外字・表記揺れを置換する」モードでは、電子登記中の外字を一般的な字体で検索できる(ex. <img src="src/glyphs/EDEA.svg" class="glyph"> → 辻、<img src="src/glyphs/EAEA.svg" class="glyph"> → け)ほか、異体字等の表記揺れにも対応します(ex. 島・嶋・嶌 → 島)。なお、元データでは外字は「〓(EXXX)」(Xは英数字)の形式で格納されています。</li>
+                        <li>検索結果を選択すると、その小字が所属する大字の代表点にジャンプします(必ずしも地図上に検索結果の小字があるとは限りません)。</li>
+                    </ul>
+                    <img class="modal-img" src="src/images/modal_search_highlight.jpg">
+                    <ul>
+                        <li>歯車マークのメニューから「検索結果をハイライト」を選ぶことで、ヒットした小字が含まれる地域をハイライト表示することができます。</li>
+                    </ul>                    
+                </div>
+                <div id="tab-source" class="tab-content">
+                    <h3>地図に表示される地名</h3>
+                    <p>地図に表示される地名(大字・小字)は、<a href="https://nlftp.mlit.go.jp/cgi-bin/isj/dls/_choose_method.cgi">大字・町丁目レベル位置参照情報(2024)</a>、<a href="https://map.maff.go.jp">eMAFF農地ナビ</a>(2025年12月〜2026年2月にかけて収集)、その他の情報によりプロットしたものです。なお、一部、表記の修正や代表点推定等の加工を行っています。</p>
+                    <h3>小字情報</h3>
+                    <p>本サイトの小字情報は、地図上に表示されるラベルに加え、電子化された不動産登記に存在する小字(以下、登記小字)を含みます。登記小字の情報は<a href="https://www.touki-kyoutaku-online.moj.go.jp">登記・供託オンライン申請ステム</a>において所在検索画面に選択肢として現れる小字を収集したものです(2025年1月〜3月にかけて収集)。なお、旧大字名を冠称した小字名等については、適宜冠称を分離する等の加工を行っている場合があります。また、大字以下に複数の階層がある場合は「【上位】〔中位〕低位」のように記載してあります。</p>
+                    
+                    <h3>読み仮名</h3>
+                    <p>市町村名および大字名に付した読み仮名は、日本郵便の<a href="https://www.post.japanpost.jp/service/search/zipcode/download/kogaki-zip.html">郵便番号データ</a>に依りました。ただし、一部<a href="https://www.digital.go.jp/policies/base_registry_address">アドレス・ベース・レジストリ</a>や施設名等により補完・修正してあります。</p>
+                    
+                    <h3>文字表記</h3>
+                    <p>登記小字の中で画像で表示される文字(外字)については、<a href="https://fonts.google.com/noto/specimen/Noto+Sans+JP">Noto Sans JP</a>をもとに作図しました。</p>
+                    
+                    <h3>大字領域</h3>
+                    <p>地図上に表示される大字領域は、<a href="https://www.e-stat.go.jp/gis/statmap-search?page=1&type=2&aggregateUnitForBoundary=A&toukeiCode=00200521&toukeiYear=2015&serveyId=A002005212015&datum=2000">国勢調査小地域(2015年)</a>をベースに、適宜加工したものです。データの特性上、実際と大きく異なる境界となっている場合があるためご注意ください。データ加工に際して参考にした資料は以下の通りです。なお、資料によらず尾根筋・谷筋で境界を分割している場合があります。</p>
+                    <details>
+                        <summary>大字領域の参考資料(順不同)</summary>
+                        <ul>
+                            <li><a href="https://front.geospatial.jp/moj-chizu-xml-readme/">登記所備付地図データ</a></li>
+                            <li><a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-N03-v2_3.html">国土数値情報 行政区域データ</a></li>
+                            <li><a href="https://www.city.toride.ibaraki.jp/toshikeikaku/kurashi/sumai/sumai/tochi/toshikeikakuzu.html">取手市都市計画図</a></li>
+                            <li><a href="https://www.city.kumagaya.lg.jp/about/soshiki/sogo/digitalsuishin/oshirase/koukaigiskumap.html">熊谷市公開型地理情報システム「くまっぷ」</a></li>
+                            <li><a href="https://www.city.honjo.lg.jp/soshiki/kikakuzaisei/jouhou/tantoujouhou/12427.html">本庄市公開型GIS「ほうじょうマップ」</a></li>
+                            <li><a href="https://www2.wagmap.jp/asaka/Portal">朝霞市地理情報システム</a></li>
+                            <li><a href="https://www.sonicweb-asp.jp/matsudo/">松戸市地図情報提供サービス「やさシティマップ」</a></li>
+                            <li><a href="https://www.town.yokoshibahikari.chiba.jp/soshiki/9/20333.html">横芝光町地図情報システム</a></li>
+                            <li><a href="https://www2.wagmap.jp/isesaki/Portal">伊勢崎市地図情報システム「いせさきくわまっぷ」</a></li>
+                            <li><a href="https://www.city.fukushima.fukushima.jp/soshiki/2/1005/1/2891.html">福島市地理情報システム「ふくしまeマップ」</a></li>
+                            <li><a href="https://www.city.shirakawa.fukushima.jp/page/page005114.html">白河市都市計画基本図</a></li>
+                            <li><a href="https://www.city.kaga.ishikawa.jp/soshiki/kensetsu/toshi_keikaku/7/4/10570.html">加賀市都市計画基本図データ</a></li>
+                            <li><a href="https://www.city.tenri.nara.jp/kakuka/soumubu/zeimuka/13691.html">天理市地番参考図</a></li>
+                            <li><a href="https://www.city.toyooka.lg.jp/kurashi/tochijutaku/1019116/1003061/1003062.html">豊岡都市計画図</a></li>
+                            <li><a href="https://www2.wagmap.jp/shiso/Portal">宍粟市地図情報「パノラマしそう」</a></li>
+                            <li><a href="https://www.city.akita.lg.jp/shisei/machizukuri/1011485/1007503/1007897.html">秋田市まちづくり地図情報システム</a></li>
+                            <li><a href="https://www.city.awa.lg.jp/docs/2013062700014/">阿波市総合ハザードマップ</a></li>
+                            <li><a href="https://www.city.sakaide.lg.jp/soshiki/dx-suishin/opendata.html">坂出市地番図データ</a></li>
+                            <li><a href="https://www.city.akishima.lg.jp/kurashi/sumai/1001640/1001667/1001677/1001682.html">昭島市|代官山の新しい住所をお知らせします</a></li>
+                            <li><a href="https://www.tax1.metro.tokyo.lg.jp/chisekizu/index.html">東京都主税局 地籍図公開（23区）</a></li>
+                            <li><a href="https://www.city.inagi.tokyo.jp/kankyo/machi_zukuri/1009096/1010971.html">稲城市｜坂浜一・二丁目地区の住所整理</a></li>
+                            <li><a href="https://www.city.kunitachi.tokyo.jp/soshiki/Dept06/Div06/Sec01/gyomu/0014/1461062132243.html">国立市｜地名地番整理のお知らせ</a></li>
+                            <li><a href="https://www.city.koto.lg.jp/650102/documents/061212bm7.pdf">江東区｜東京都都市計画域区分の変更（東京都決定）</a></li>
+                            <li><a href="https://www.city.hino.lg.jp/shisei/machidukuri/chomei/1005343.html">日野市｜日野市の町名地番整理</a></li>
+                            <li><a href="https://www.city.machida.tokyo.jp/kurashi/sumai/toshikei/t_06/juushoseiri/kanaimachi/notice_implementation.html">町田市｜2020年7月25日に金井町・藤の台団地地区の住所が変わります</a></li>
+                            <li><a href="https://www.city.machida.tokyo.jp/kurashi/sumai/toshikei/t_06/juushoseiri/ogawa-turuma-keikaku.html">町田市｜小川・鶴間地区で住所整理を実施しました（2016年7月18日実施）</a></li>
+                            <li><a href="https://www.city.atsugi.kanagawa.jp/soshiki/kaihatsushinsaka/4_1/3/33262.html">厚木市｜飯山地区住居表示_旧新・新旧対照表</a></li>
+                            <li><a href="https://www.city.ebina.kanagawa.jp/guide/todokede/jukyo/1002836.html">海老名市｜過去の住居表示について</a></li>
+                            <li><a href="https://www.city.zama.kanagawa.jp/_res/projects/default_project/_page_/001/002/599/siori-0406180046.pdf">座間市｜住居表示のしおり 入谷地区にお住まいの皆様へ</a></li>
+                            <li><a href="https://www.city.fujisawa.kanagawa.jp/sisanzei/kurashi/zekin/koteshisan/chibanzu.html">藤沢市 固定資産(土地)地番参考図</a></li>
+                            <li><a href="https://www2.wagmap.jp/minamiashigara/Agreement?IsPost=False&MapId=15&RequestPage=%2fminamiashigara%2fPositionSelect%3fmid%3d15">南足柄市地理情報システム「Mi-navi」</a></li>
+                            <li><a href="https://www.city.asahi.lg.jp/soshiki/17/2813.html">旭市都市計画図</a></li>
+                            <li><a href="https://www.city.abiko.chiba.jp/kurashi/zeikin/property/chibanzu/chibanzu-eturan/tibanzueturan.html">我孫子市地番参考図</a></li>
+                            <li><a href="https://www.city.koto.lg.jp/010121/kuse/shisaku/torikumi/documents/190926kutyoukomento.pdf">江東区｜中央防波堤埋立地境界確定訴訟における第一審判決を受けての本区の対応について（令和元年9月26日）</a></li>
+                            <li><a href="https://www.city.ota.tokyo.jp/oshirase/mokutekibetsu/koseki/machikuikishinsetsu.html">大田区｜大田区中央防波堤埋立地の町区域の新設及び住居表示の実施について</a></li>
+                        </ul>
+                    </details>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="map"></div>
+    <div id="settings-container" class="menu-container">
+        <div class="setting-title">地図スタイル</div>
+        <div class="option-button base-option" data-key="gsi_pale"><span>地理院タイル(淡色)</span></div>
+        <div class="option-button base-option" data-key="gsi_std"><span>地理院タイル(標準)</span></div>
+        <div class="option-button base-option" data-key="gsi_seamless"><span>空中写真</span></div>
+        <div class="option-button base-option" data-key="osm_raster"><span>OpenStreetMap</span></div>
+        <div class="option-button base-option" data-key="none"><span>背景なし</span></div>
+        <div class="setting-title">背景透明度</div>
+        <input type="range" id="opacityBase" min="0" max="100" value="50">
+        <div class="setting-title">背景彩度</div>
+        <input type="range" id="saturationBase" min="-100" max="0" value="0">
+        <div class="setting-title">ポリゴン透明度</div>
+        <input type="range" id="opacityPolygon" min="0" max="100" value="20">
+        <div class="setting-title">大字・市町村ラベル透明度</div>
+        <input type="range" id="opacityOaza" min="0" max="100" value="50">
+        <div class="setting-title">小字ラベル透明度</div>
+        <input type="range" id="opacityKoaza" min="0" max="100" value="50">
+        <div class="setting-title">ポップアップ表示</div>
+        <div class="option-button popup-option selected"><span>クリック時にポップアップ</span></div>
+        <div class="setting-title">検索時表示</div>
+        <div class="option-button search-disp-option"><span>検索結果をハイライト</span></div>     
+    </div>
+    <div id="detail-panel">
+        <div class="panel-resizer" id="panel-resizer"></div>
+        <div class="panel-header">
+            <div class="panel-title" id="detail-title"></div>
+            <button class="panel-close">&times;</button>
+        </div>
+        <div class="panel-content" id="detail-content"></div>
+    </div>
+</body>
+</html>

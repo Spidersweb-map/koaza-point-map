@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0" y="0" width="1000" height="1000" viewBox="0, 0, 1000, 1000">
+  <g id="Background">
+    <rect x="0" y="0" width="1000" height="1000" fill="#000000" fill-opacity="0"/>
+  </g>
+  <g id="レイヤー_1">
+    <path d="M526.445,382.972 L926.84,382.972 L926.84,456.972 L526.445,456.972 z M680.486,46.972 L758.486,46.972 L758.486,956.972 L680.486,956.972 z" fill="#000000"/>
+    <path d="M73.16,382.972 L473.555,382.972 L473.555,456.972 L73.16,456.972 z M251.513,46.972 L329.513,46.972 L329.513,956.972 L251.513,956.972 z" fill="#000000"/>
+  </g>
+</svg>
