@@ -162,13 +162,14 @@ export async function initSearch() {
     await Promise.all(
         [...Array(47).keys()].map(async (i) => {
             const response = await fetch(`./src/search/${String(i + 1).padStart(2, "0")}.dat`);
-            const encoding = response.headers.get("Content-Encoding");
+            const buffer = await response.clone().arrayBuffer();
+            const bytes = new Uint8Array(buffer);
             let text;
-            if (encoding === "gzip" || encoding === "x-gzip") {
-                text = await response.text();
-            } else {
+            if (bytes.length >= 2 && bytes[0] === 0x1f && bytes[1] === 0x8b) {
                 const stream = response.body.pipeThrough(new DecompressionStream("gzip"));
                 text = await new Response(stream).text();
+            } else {
+                text = await response.text();
             }
             searchData[i] = JSON.parse(text);
         })
