@@ -685,7 +685,9 @@ function renderResults(geocodes, searchTarget) {
                 searchResults.style.display = 'none';
             }
             selected = {"properties": {"CityCode": g.properties.addressCode, "OazaName":g.properties.oaza, "CityName":g.properties.city}};
-            openDetailPanel();
+            if (searchTarget === "koaza") {
+                openDetailPanel();
+            }
         };
         searchResults.appendChild(div);
         if (searchTarget === "koaza" && localStorage.getItem("searchHighlight") === "true") {
